@@ -32,22 +32,22 @@
     "@hono/node-server": "^2.1.5",
     "@hono/zod-openapi": "^1.6.3",
     "hono": "^4.13.13",
-    "ipaddr.js": "^2.2.0",
+    "ipaddr.js": "^2.5.0",
     "mmdb-lib": "^3.0.3",
     "ua-parser-js": "^2.0.10",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "^12.1.0",
-    "@types/node": "^24.0.0",
-    "oxfmt": "^0.73.0",
-    "oxlint": "^1.88.0",
+    "@types/node": "^24.19.2",
+    "oxfmt": "^0.74.0",
+    "oxlint": "^1.89.0",
     "oxlint-tsgolint": "^7.0.2004",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.5"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=24.22.1"
   },
-  "packageManager": "pnpm@12.11.2"
+  "packageManager": "pnpm@12.14.0"
 }
