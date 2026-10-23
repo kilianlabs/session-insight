@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+geoip-data/
+.pnpm-store/
+*.tsbuildinfo
+*.log
+.env
+.env.*
+.DS_Store
+_tmp_*/

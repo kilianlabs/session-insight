@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+geoip-data
+.git
+.env
+.env.*
+*.tsbuildinfo
+*.log
+_tmp_*
+.github
+.vscode
+.DS_Store

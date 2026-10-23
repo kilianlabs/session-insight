@@ -1,0 +1,39 @@
+Session Insight
+https://github.com/kilianlabs/session-insight
+
+Session Insight is licensed under the GNU Affero General Public License,
+version 3 only (AGPL-3.0-only). See LICENSE.
+
+Third-party packages retain their respective licenses and notices, included
+with the packages in node_modules in the container image.
+
+This product includes GeoLite Data created by MaxMind, available from
+https://www.maxmind.com/.
+
+Database and Contents Copyright (c) MaxMind, Inc.
+GeoLite data is subject to the Creative Commons Attribution-ShareAlike 4.0
+International License and the GeoLite End User License Agreement:
+https://creativecommons.org/licenses/by-sa/4.0/
+https://www.maxmind.com/en/geolite/eula
+
+Session Insight downloads unmodified GeoLite2-City MMDB files from the
+third-party P3TERX/GeoLite.mmdb mirror:
+https://github.com/P3TERX/GeoLite.mmdb
+The container image does not bundle a production database snapshot.
+These data terms apply separately from the application's AGPL license.
+Preserve this attribution and the applicable data terms when redistributing.
+Keep the data current and remove superseded copies within 30 days of a new
+release, including copies retained outside the application's cache.
+GeoLite data is approximate and must not be used to identify a specific
+household, individual, or street address.
+
+UAParser.js is copyright Faisal Salman and contributors and is used under
+its GNU Affero General Public License version 3 distribution.
+https://github.com/faisalman/ua-parser-js
+
+The mmdb-lib reader is distributed under the MIT License.
+https://github.com/runk/mmdb-lib
+
+The repository's synthetic MMDB test fixture is from MaxMind-DB, under its
+MIT / Apache 2.0 licenses. Copies accompany the fixture in src/__tests__/data.
+https://github.com/maxmind/MaxMind-DB

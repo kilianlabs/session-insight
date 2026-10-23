@@ -1,0 +1,283 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Session Insight",
+    "version": "0.1.0",
+    "license": {
+      "name": "AGPL-3.0-only",
+      "url": "https://github.com/kilianlabs/session-insight/blob/main/LICENSE"
+    },
+    "description": "Stateless session enrichment with local GeoIP data and UAParser.js. Intended for a trusted internal network."
+  },
+  "components": {
+    "schemas": {
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "Problem": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail"
+        ]
+      },
+      "EnrichmentResponse": {
+        "type": "object",
+        "properties": {
+          "device_type": {
+            "type": "string",
+            "enum": [
+              "desktop",
+              "mobile",
+              "tablet",
+              "smarttv",
+              "console",
+              "wearable",
+              "embedded",
+              "xr",
+              "unknown"
+            ],
+            "description": "Device category for a session icon. Desktop is inferred only for a recognized desktop OS and browser."
+          },
+          "device_model": {
+            "type": "string",
+            "nullable": true,
+            "description": "Recognizable device model, when available."
+          },
+          "browser": {
+            "type": "string",
+            "nullable": true,
+            "description": "Browser name, without a version."
+          },
+          "os": {
+            "type": "string",
+            "nullable": true,
+            "description": "Operating system name, without a version."
+          },
+          "country_code": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^[A-Z]{2}$",
+            "description": "ISO 3166-1 alpha-2 country code for localization by the caller. Null for non-public addresses or unavailable country data."
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "description": "Approximate city name. Null for non-public addresses or unavailable city data."
+          }
+        },
+        "required": [
+          "device_type",
+          "device_model",
+          "browser",
+          "os",
+          "country_code",
+          "city"
+        ],
+        "additionalProperties": false
+      },
+      "EnrichmentRequestInput": {
+        "type": "object",
+        "properties": {
+          "ip": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "ip"
+              },
+              {
+                "type": "string",
+                "format": "ip"
+              }
+            ],
+            "description": "A single IPv4 or IPv6 address, without a port, zone ID, or proxy chain."
+          },
+          "user_agent": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "Original browser User-Agent. Empty is allowed. UAParser.js analyzes at most the first 500 characters."
+          },
+          "client_hints": {
+            "$ref": "#/components/schemas/ClientHints"
+          }
+        },
+        "required": [
+          "ip",
+          "user_agent"
+        ],
+        "additionalProperties": false
+      },
+      "ClientHints": {
+        "type": "object",
+        "properties": {
+          "sec-ch-ua": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "sec-ch-ua-full-version-list": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "sec-ch-ua-mobile": {
+            "type": "string",
+            "enum": [
+              "?0",
+              "?1"
+            ]
+          },
+          "sec-ch-ua-model": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "sec-ch-ua-platform": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "sec-ch-ua-form-factors": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "additionalProperties": false,
+        "description": "Original browser Client Hint headers, using lowercase header names and unmodified values."
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Check that the sidecar has a usable GeoIP database",
+        "responses": {
+          "200": {
+            "description": "The sidecar is ready to enrich sessions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or enrichment failure.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enrich": {
+      "post": {
+        "operationId": "enrichSession",
+        "summary": "Enrich an IP address and User-Agent",
+        "description": "Return only the device, browser, OS, city, and country details needed for session history. Pass the original session client information in the body; transport and proxy headers are not used. Unknown values are null except device_type, which is unknown. Non-public IPs and database misses have null city and country_code.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrichmentRequestInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Enriched session information.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrichmentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request or enrichment failure.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request or enrichment failure.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Request or enrichment failure.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Request or enrichment failure.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request or enrichment failure.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
