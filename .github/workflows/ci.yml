@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check project and containers
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+        with:
+          run_install: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - name: Check release version
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict'
+          import { readFileSync } from 'node:fs'
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'))
+          const api = JSON.parse(readFileSync('openapi.json', 'utf8'))
+          assert.match(pkg.version, /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/, 'Releases must use stable major.minor.patch versions')
+          assert.equal(process.env.RELEASE_TAG, `v${pkg.version}`, 'Tag must match package.json version')
+          assert.equal(api.info.version, pkg.version, 'OpenAPI and package versions must match')
+          JS
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm check
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - name: Build and smoke test each platform sequentially
+        run: |
+          for platform in linux/amd64 linux/arm64; do
+            docker buildx build --platform "$platform" --load -t session-insight:ci .
+            docker run --rm -i --platform "$platform" --entrypoint node \
+              session-insight:ci --input-type=module < scripts/smoke-container.mjs
+          done

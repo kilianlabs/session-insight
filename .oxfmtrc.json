@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "semi": false,
+  "singleQuote": true,
+  "endOfLine": "lf",
+  "tabWidth": 2,
+  "useTabs": false,
+  "insertFinalNewline": true,
+  "sortPackageJson": true,
+  "ignorePatterns": ["dist/**", "openapi.json", "pnpm-lock.yaml"]
+}
