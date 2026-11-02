@@ -31,7 +31,7 @@
   "dependencies": {
     "@hono/node-server": "^2.1.5",
     "@hono/zod-openapi": "^1.6.3",
-    "hono": "^4.13.13",
+    "hono": "^4.13.14",
     "ipaddr.js": "^2.5.0",
     "mmdb-lib": "^3.0.3",
     "ua-parser-js": "^2.0.10",
@@ -40,8 +40,8 @@
   "devDependencies": {
     "@apidevtools/swagger-parser": "^13.1.0",
     "@types/node": "^24.19.2",
-    "oxfmt": "^0.74.0",
-    "oxlint": "^1.89.0",
+    "oxfmt": "^0.75.0",
+    "oxlint": "^1.90.0",
     "oxlint-tsgolint": "^7.0.2005",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
@@ -49,5 +49,5 @@
   "engines": {
     "node": ">=24"
   },
-  "packageManager": "pnpm@12.15.0"
+  "packageManager": "pnpm@12.16.1"
 }
