@@ -5,11 +5,13 @@ The steps below are for making and testing code changes.
 
 ## Local setup
 
-Install Node.js 24 and enable Corepack to use the pnpm version declared in `package.json`.
+Install Node.js 26 LTS, then install and enable Corepack to use the pnpm version
+declared in `package.json`.
 
 ```sh
 git clone https://github.com/kilianlabs/session-insight.git
 cd session-insight
+npm install --global corepack
 corepack enable
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm dev
