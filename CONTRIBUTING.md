@@ -1,5 +1,8 @@
 # Contributing
 
+To run Session Insight in your application, start with the [Docker guide](README.md#run-with-docker).
+The steps below are for making and testing code changes.
+
 ## Local setup
 
 Install Node.js 24 and enable Corepack to use the pnpm version declared in `package.json`.
@@ -33,11 +36,8 @@ pnpm build
 pnpm start
 ```
 
-Run `pnpm audit` before a release or after updating dependencies. Renovate checks
-packages, GitHub Actions, and Docker images on Monday mornings in `Europe/Berlin`.
-Renovate automatically merges digest, patch, minor, and lockfile maintenance
-updates after checks pass. Major updates require manual review and merging.
-Commit the lockfile alongside any dependency changes.
+When updating dependencies, run `pnpm audit` and commit the lockfile alongside
+your changes.
 
 Use [private vulnerability reporting](SECURITY.md) for security issues.
 
@@ -52,10 +52,3 @@ docker run --rm -i --entrypoint node \
 The smoke test checks the actual server inside the Alpine container, including
 non-root execution, an automatic database download, IPv4/IPv6 enrichment,
 validation, OpenAPI, and shutdown with an incomplete HTTP request. This test needs outbound HTTPS.
-CI builds and tests AMD64 and ARM64 sequentially on one runner, using QEMU for
-ARM64. Pull requests do not publish images or require registry credentials.
-
-## Releases
-
-Maintainers can find the versioning and GHCR publishing process in
-[docs/releases.md](docs/releases.md).

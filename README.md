@@ -22,7 +22,7 @@ docker run --rm -p 127.0.0.1:3000:3000 \
 ```
 
 For production, choose a versioned release or pin an image digest. There is no
-`latest` tag. See [image tags and releases](docs/releases.md).
+`latest` tag. See [image tags and upgrades](docs/releases.md).
 
 To add the service to an existing Docker Compose stack:
 
@@ -98,11 +98,11 @@ take effect without a restart. Failed updates retry hourly while the last usable
 database remains active. See
 [deployment and database updates](docs/operations.md).
 
-## Contributing
+## Help and feedback
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup and checks.
 Report bugs or suggest improvements in [GitHub Issues](https://github.com/kilianlabs/session-insight/issues).
 For security issues, see [SECURITY.md](SECURITY.md).
+To contribute code, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

@@ -40,7 +40,7 @@ IPv4-mapped IPv6 internally before lookup.
 
 ## Response
 
-Every response contains exactly these six fields:
+Every successful response contains exactly these six fields:
 
 | Field          | Meaning                                                                                          |
 | -------------- | ------------------------------------------------------------------------------------------------ |
@@ -72,10 +72,17 @@ session details alongside the existing status, timestamps, and logout controls.
 ## Errors and health
 
 Errors use `application/problem+json` with `type`, `title`, `status`, and `detail`.
-Statuses are 400 (invalid input), 404 (unknown route), 413 (body too large), 415
-(unsupported media type), 500 (enrichment failed), and 503 (no usable GeoIP database).
-Request values are omitted from errors and logs. All responses use
-`Cache-Control: no-store`.
+
+| Status | Meaning                  | What to check                                                   |
+| ------ | ------------------------ | --------------------------------------------------------------- |
+| `400`  | Invalid input            | Send valid JSON with the required fields and no unknown fields. |
+| `404`  | Unknown endpoint         | Check the request URL.                                          |
+| `413`  | Body too large           | Keep the request body within 32 KiB.                            |
+| `415`  | Unsupported content type | Set `Content-Type: application/json`.                           |
+| `500`  | Enrichment failed        | Retry the request; if it keeps failing, report the issue.       |
+| `503`  | GeoIP data unavailable   | Check the service logs and database download access.            |
+
+Request values are omitted from errors and logs. All responses use `Cache-Control: no-store`.
 
 `GET /health` returns `200` with `{ "status": "ok" }` when GeoIP data is usable,
 or `503` after it expires. Enrichment resumes automatically when an update succeeds.
