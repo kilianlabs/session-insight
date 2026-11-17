@@ -5,6 +5,7 @@ import { Readable, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { Reader } from 'mmdb-lib'
 import type { CityResponse } from 'mmdb-lib'
+import { logger } from './logging.ts'
 import type { Location } from './schemas.ts'
 
 const databaseUrl =
@@ -35,21 +36,21 @@ export async function openGeoDatabase(options: {
 
   const isReady = () =>
     Boolean(reader && Date.now() < reader.metadata.buildEpoch.getTime() + maxAge)
-  console.info(`Loading GeoLite database from ${databasePath}`)
+  logger.info({ path: databasePath }, 'Loading GeoLite database')
   await mkdir(options.directory, { recursive: true })
   await rm(downloadPath, { force: true })
   try {
     reader = await loadDatabase(databasePath)
-    console.info('GeoLite database cache loaded')
+    logger.info('GeoLite database cache loaded')
   } catch (error) {
     if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) {
-      console.warn('Discarding unusable GeoLite database cache')
+      logger.warn('Discarding unusable GeoLite database cache')
       await rm(databasePath, { force: true })
     }
   }
 
   async function download() {
-    console.info('Downloading GeoLite database')
+    logger.info('Downloading GeoLite database')
     const signal = AbortSignal.any([shutdownSignal, AbortSignal.timeout(120_000)])
     try {
       const response = await fetch(databaseUrl, { signal })
@@ -84,7 +85,7 @@ export async function openGeoDatabase(options: {
       signal.throwIfAborted()
       await rename(downloadPath, databasePath)
       reader = replacement
-      console.info('GeoLite database updated')
+      logger.info('GeoLite database updated')
     } finally {
       await rm(downloadPath, { force: true })
     }
@@ -100,7 +101,7 @@ export async function openGeoDatabase(options: {
 
   function reportFailure(error: unknown) {
     if (!shutdownSignal.aborted) {
-      console.warn('GeoLite update failed; retrying in one hour', error)
+      logger.warn({ error }, 'GeoLite update failed; retrying in one hour')
     }
   }
 
@@ -109,14 +110,15 @@ export async function openGeoDatabase(options: {
       updateTimer = setTimeout(() => {
         void scheduledUpdate()
       }, delay).unref()
-      console.info(
-        `Next background GeoLite database update scheduled for ${new Date(Date.now() + delay).toISOString()}`,
+      logger.info(
+        { next_update: new Date(Date.now() + delay).toISOString() },
+        'Next background GeoLite database update scheduled',
       )
     }
   }
 
   async function scheduledUpdate() {
-    console.info('Starting background GeoLite database update')
+    logger.info('Starting background GeoLite database update')
     try {
       await update()
       scheduleUpdate(day)
@@ -131,7 +133,7 @@ export async function openGeoDatabase(options: {
     void scheduledUpdate()
   } else {
     // Do not accept traffic until the initial database is available.
-    console.info('No usable GeoLite database cache; waiting for the initial download')
+    logger.info('No usable GeoLite database cache; waiting for the initial download')
     await update()
     scheduleUpdate(day)
   }
@@ -145,7 +147,7 @@ export async function openGeoDatabase(options: {
     if (reader && !isReady()) {
       reader = undefined
       await rm(databasePath, { force: true })
-      console.warn('GeoLite database expired; geolocation is unavailable until an update succeeds')
+      logger.warn('GeoLite database expired; geolocation is unavailable until an update succeeds')
     }
   }
 
@@ -161,7 +163,7 @@ export async function openGeoDatabase(options: {
       clearTimeout(updateTimer)
       controller.abort()
       await updating?.catch(() => {})
-      console.info('Background GeoLite database updater stopped')
+      logger.info('Background GeoLite database updater stopped')
     },
   }
 }

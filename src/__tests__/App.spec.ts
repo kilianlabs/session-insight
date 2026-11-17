@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url'
 import SwaggerParser from '@apidevtools/swagger-parser'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { MockInstance } from 'vitest'
 import { buildApp, openApiConfig } from '../app.ts'
 import type { GeoLookup } from '../geoip.ts'
 import { enrichmentResponseSchema, problemSchema } from '../schemas.ts'
@@ -9,6 +10,15 @@ import { berlin, iphoneSafari, windowsChrome } from './fixtures.ts'
 describe('HTTP API', () => {
   const lookup = vi.fn<GeoLookup>(() => berlin)
   const app = buildApp({ lookup })
+  let logOutput: MockInstance<typeof process.stdout.write>
+
+  beforeEach(() => {
+    logOutput = vi.spyOn(process.stdout, 'write').mockReturnValue(true)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
 
   it('enriches the explicit input rather than the backend connection headers', async () => {
     const response = await app.request('/api/enrich', {
@@ -124,24 +134,19 @@ describe('HTTP API', () => {
         throw new Error('secret failure details')
       },
     })
-    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {})
-    try {
-      const response = await failingApp.request('/api/enrich', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ip: '8.8.8.8', user_agent: windowsChrome }),
-      })
-      expect(response.status).toBe(500)
-      expect(problemSchema.parse(await response.json())).toEqual({
-        type: 'urn:session-insight:error:internal',
-        title: 'Internal Server Error',
-        status: 500,
-        detail: 'Session enrichment failed.',
-      })
-      expect(errorLog).toHaveBeenCalledExactlyOnceWith('Session enrichment failed')
-    } finally {
-      errorLog.mockRestore()
-    }
+    const response = await failingApp.request('/api/enrich', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ip: '8.8.8.8', user_agent: windowsChrome }),
+    })
+    expect(response.status).toBe(500)
+    expect(problemSchema.parse(await response.json())).toEqual({
+      type: 'urn:session-insight:error:internal',
+      title: 'Internal Server Error',
+      status: 500,
+      detail: 'Session enrichment failed.',
+    })
+    expect(JSON.stringify(logOutput.mock.calls)).not.toContain('secret failure details')
   })
 
   it('serves health without an interactive documentation UI', async () => {

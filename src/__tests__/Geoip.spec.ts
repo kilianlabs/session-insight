@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Reader } from 'mmdb-lib'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { MockInstance } from 'vitest'
 import { openGeoDatabase } from '../geoip.ts'
 
 const fixture = await readFile(new URL('./data/GeoLite2-City-Test.mmdb', import.meta.url))
@@ -14,6 +15,7 @@ type Database = Awaited<ReturnType<typeof openGeoDatabase>>
 
 describe('automatic GeoLite updates', () => {
   let directory: string
+  let logOutput: MockInstance<typeof process.stdout.write>
   const databases: Database[] = []
   const databasePath = () => join(directory, 'GeoLite2-City.mmdb')
 
@@ -23,8 +25,7 @@ describe('automatic GeoLite updates', () => {
       toFake: ['Date', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'],
     })
     vi.setSystemTime(buildDate + day)
-    vi.spyOn(console, 'info').mockImplementation(() => {})
-    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    logOutput = vi.spyOn(process.stdout, 'write').mockReturnValue(true)
   })
 
   afterEach(async () => {
@@ -142,10 +143,7 @@ describe('automatic GeoLite updates', () => {
     await vi.advanceTimersByTimeAsync(hour)
     expect(fetch).toHaveBeenCalledTimes(2)
     await vi.waitFor(() =>
-      expect(console.warn).toHaveBeenCalledWith(
-        'GeoLite update failed; retrying in one hour',
-        expect.objectContaining({ message: 'offline' }),
-      ),
+      expect(logOutput).toHaveBeenCalledWith(expect.stringContaining('"message":"offline"')),
     )
     await vi.advanceTimersByTimeAsync(hour)
     await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(3))

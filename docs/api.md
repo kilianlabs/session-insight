@@ -38,6 +38,16 @@ The caller resolves the originating IP using its trusted proxy configuration.
 The sidecar uses the JSON body, not transport or proxy headers, and normalizes
 IPv4-mapped IPv6 internally before lookup.
 
+### Request correlation
+
+Pass an optional `X-Request-ID` header to correlate the call with the caller's
+logs. The sidecar preserves a nonempty value or generates a UUID when it is
+missing or empty, returns it in the `X-Request-ID` response header (including on
+errors), and includes it as `request_id` in access and enrichment failure logs.
+This header works on all endpoints and does not change the JSON request or
+response. Use an opaque diagnostic ID, never a session credential or personal
+data. See [logging](operations.md#logs) for the log fields.
+
 ## Response
 
 Every successful response contains exactly these six fields:
@@ -82,7 +92,8 @@ Errors use `application/problem+json` with `type`, `title`, `status`, and `detai
 | `500`  | Enrichment failed        | Retry the request; if it keeps failing, report the issue.       |
 | `503`  | GeoIP data unavailable   | Check the service logs and database download access.            |
 
-Request values are omitted from errors and logs. All responses use `Cache-Control: no-store`.
+Enrichment inputs and results are omitted from errors and logs. All responses use
+`Cache-Control: no-store`.
 
 `GET /health` returns `200` with `{ "status": "ok" }` when GeoIP data is usable,
 or `503` after it expires. Enrichment resumes automatically when an update succeeds.

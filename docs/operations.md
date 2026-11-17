@@ -51,10 +51,30 @@ after fixing the issue.
 
 ### Logs
 
-Logs show startup, the listening address, database downloads, and shutdown.
-Database update messages include the next update or retry time in UTC. Failed
-updates include error details. Warnings and errors go to standard error; other
-messages go to standard output. Session inputs and enrichment results are never logged.
+[Pino](https://github.com/pinojs/pino) writes newline-delimited JSON logs to standard
+output, including warnings and errors, with `time` (UTC), `level`, `msg`, and
+`service: "session-insight"`. Logs cover
+startup, the listening address, database downloads, shutdown, HTTP access, and
+enrichment failures. Database scheduling records include `next_update` in UTC;
+failed updates include an `error` object with the error type, message, and stack.
+The application does not write log files; configure collection and rotation in
+the container runtime.
+
+Every request uses the incoming `X-Request-ID`, or generates a UUID if the header
+is absent or empty. The response returns this value in `X-Request-ID`. Access and
+enrichment failure records share it in `request_id` so callers can correlate
+requests across services. Forward the original request ID when calling the
+sidecar. This is a correlation ID, not a session
+credential; do not put authentication tokens or personal data in it.
+
+Every handled request emits `event: "http_request"` with `method`, `path`, `status`,
+`duration_ms`, and `size` (response body bytes), including health, OpenAPI, and
+rejected requests. The Node server also supplies `proto` (for example, `HTTP/1.1`).
+Enrichment failures include `operation: "enrich"`, `error_type`, and `status`.
+Records are not sampled. Request logs exclude query strings, IP addresses,
+User-Agent, Client Hints, bodies, cookies, authorization headers, enrichment
+results, and raw parser errors. Raw paths and caller-supplied request IDs are
+logged; JSON encoding escapes embedded newlines.
 
 ## Stop or remove the service
 

@@ -3,15 +3,16 @@ import type { ServerType } from '@hono/node-server'
 import { buildApp } from './app.ts'
 import { readConfig } from './config.ts'
 import { openGeoDatabase } from './geoip.ts'
+import { logger } from './logging.ts'
 
-console.info('Starting Session Insight')
+logger.info('Starting Session Insight')
 const controller = new AbortController()
 let database: Awaited<ReturnType<typeof openGeoDatabase>> | undefined
 let server: ServerType | undefined
 
 function shutdown(signal: NodeJS.Signals) {
   if (controller.signal.aborted) return
-  console.info(`Stopping Session Insight (${signal})`)
+  logger.info({ signal }, 'Stopping Session Insight')
   controller.abort()
   void database?.close()
   if (!server) return
@@ -23,11 +24,11 @@ function shutdown(signal: NodeJS.Signals) {
   server.close((error) => {
     clearTimeout(timeout)
     if (error) {
-      console.error('Failed to close Session Insight', error)
+      logger.error({ error }, 'Failed to close Session Insight')
       process.exitCode = 1
       return
     }
-    console.info('Session Insight HTTP server stopped')
+    logger.info('Session Insight HTTP server stopped')
   })
 }
 
@@ -54,19 +55,19 @@ try {
       },
       (info) => {
         const address = info.family === 'IPv6' ? `[${info.address}]` : info.address
-        console.info(`Session Insight listening on http://${address}:${info.port}`)
+        logger.info({ address: `http://${address}:${info.port}` }, 'Session Insight listening')
       },
     )
 
     server.on('error', (error) => {
-      console.error('Failed to start Session Insight', error)
+      logger.error({ error }, 'Failed to start Session Insight')
       process.exitCode = 1
       void database?.close()
     })
   }
 } catch (error) {
   if (!controller.signal.aborted) {
-    console.error('Failed to start Session Insight', error)
+    logger.error({ error }, 'Failed to start Session Insight')
     process.exitCode = 1
   }
   await database?.close()

@@ -5,6 +5,8 @@ import { HTTPException } from 'hono/http-exception'
 import packageJson from '../package.json' with { type: 'json' }
 import { enrichSession } from './enrich.ts'
 import type { GeoLookup } from './geoip.ts'
+import { logRequests } from './request-logging.ts'
+import type { LoggingEnv } from './request-logging.ts'
 import {
   enrichmentRequestSchema,
   enrichmentResponseSchema,
@@ -27,10 +29,11 @@ export const openApiConfig = {
 }
 
 export function buildApp(options: { lookup: GeoLookup; isReady?: () => boolean }) {
-  const app = new OpenAPIHono({
+  const app = new OpenAPIHono<LoggingEnv>({
     defaultHook: (result, c) => (result.success ? undefined : problem(c, 400)),
   })
 
+  app.use('*', logRequests)
   app.use('*', async (c, next) => {
     c.header('Cache-Control', 'no-store')
     await next()
@@ -38,7 +41,14 @@ export function buildApp(options: { lookup: GeoLookup; isReady?: () => boolean }
   app.onError((error, c) => {
     if (error instanceof HTTPException && error.status === 400) return problem(c, 400)
     // Never log input, parser exceptions, or response payloads containing session data.
-    console.error('Session enrichment failed')
+    c.get('logger').error(
+      {
+        operation: 'enrich',
+        error_type: 'urn:session-insight:error:internal',
+        status: 500,
+      },
+      'Session enrichment failed',
+    )
     return problem(c, 500)
   })
   app.notFound((c) => problem(c, 404))
